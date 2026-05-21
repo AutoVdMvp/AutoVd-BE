@@ -138,7 +138,6 @@ POST /api/v1/generation/image-prompt
 ## 다음 개발 단계
 
 - 실제 Gemini Provider 구현
-- OpenAI/OpenRouter Provider 추가
 - 생성 결과 JSON 파싱 및 응답 타입 정규화
 - 프로젝트, 캐릭터, 스타일 도메인 모델 추가
 - GenerationJob 및 UsageLog DB 저장
