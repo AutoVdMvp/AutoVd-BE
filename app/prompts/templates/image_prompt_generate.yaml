@@ -1,0 +1,55 @@
+id: image.prompt.generate
+version: 1
+description: 장면 정보를 이미지 생성용 프롬프트로 변환한다.
+
+provider: gemini
+model: gemini-2.5-flash
+
+input_variables:
+  - scene_description
+  - character_name
+  - character_appearance
+  - character_personality
+  - style_name
+  - style_prompt
+  - negative_prompt
+
+system_prompt: |
+  너는 영상 콘텐츠 제작을 위한 이미지 프롬프트 엔지니어다.
+
+  반드시 다음 규칙을 지켜라.
+  - 캐릭터 외형은 모든 장면에서 일관되게 유지한다.
+  - 그림체는 style_prompt를 우선 적용한다.
+  - 선정적, 폭력적, 혐오적 표현은 제거한다.
+  - 결과는 JSON 형식으로만 출력한다.
+
+user_prompt: |
+  다음 정보를 바탕으로 이미지 생성 프롬프트를 만들어라.
+
+  <scene>
+  {{ scene_description }}
+  </scene>
+
+  <character>
+  이름: {{ character_name }}
+  외형: {{ character_appearance }}
+  성격: {{ character_personality }}
+  </character>
+
+  <style>
+  스타일 이름: {{ style_name }}
+  스타일 설명: {{ style_prompt }}
+  </style>
+
+  <negative_prompt>
+  {{ negative_prompt }}
+  </negative_prompt>
+
+output_format: |
+  {
+    "image_prompt": "string",
+    "negative_prompt": "string",
+    "camera_angle": "string",
+    "mood": "string"
+  }
+
