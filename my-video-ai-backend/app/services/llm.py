@@ -5,6 +5,7 @@ from app.core.config import settings
 # # Gemini API Key Setup
 genai.configure(api_key=settings.GEMINI_API_KEY)
 
+
 def generate_video_plan(article_text: str) -> dict:
     system_prompt = """당신은 유튜브 쇼츠(Shorts) 전문 영상 기획자입니다.
     주어진 기사 본문을 분석하여 시청자가 지루하지 않게 빠르고 역동적인 템포의 영상 기획안을 작성하세요.
@@ -40,7 +41,7 @@ def generate_video_plan(article_text: str) -> dict:
             generation_config={
                 "temperature": 0.7,
                 "response_mime_type": "application/json",
-            }
+            },
         )
 
         # Model에 Prompt 전달
@@ -51,8 +52,10 @@ def generate_video_plan(article_text: str) -> dict:
         video_plan = json.loads(response.text)
 
         return video_plan
-    
+
     except json.JSONDecodeError:
-        raise ValueError(f"Gemini가 올바른 JSON 형식을 반환하지 않았습니다. 원본 응답:\n{response.text}")
+        raise ValueError(
+            f"Gemini가 올바른 JSON 형식을 반환하지 않았습니다. 원본 응답:\n{response.text}"
+        )
     except Exception as e:
         raise Exception(f"Gemini 영상 기획 중 오류가 발생했습니다: {str(e)}")

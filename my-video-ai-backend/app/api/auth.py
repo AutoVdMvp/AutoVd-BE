@@ -13,6 +13,7 @@ router = APIRouter()
 # 실제 Google Cloud에서 발급받은 Client ID로 교체
 GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
 
+
 @router.post("/google", response_model=TokenResponse)
 async def google_login(request: GoogleLoginRequest, db: AsyncSession = Depends(get_db)):
     try:
@@ -43,7 +44,7 @@ async def google_login(request: GoogleLoginRequest, db: AsyncSession = Depends(g
 
         # Test Response
         return TokenResponse(access_token=access_token)
-    
+
     except ValueError:
         # Token 검증 실패
         raise HTTPException(status_code=401, detail="Invalid Google Token")

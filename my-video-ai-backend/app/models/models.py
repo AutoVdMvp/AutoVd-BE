@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 import uuid
 from app.db.database import Base
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -14,6 +15,7 @@ class User(Base):
 
     # Relationship Setup
     projects = relationship("Project", back_populates="owner")
+
 
 class Project(Base):
     __tablename__ = "projects"
@@ -33,20 +35,25 @@ class Project(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     owner = relationship("User", back_populates="projects")
-    scenes = relationship("Scene", back_populates="project", cascade="all, delete-orphan")
+    scenes = relationship(
+        "Scene", back_populates="project", cascade="all, delete-orphan"
+    )
+
 
 class Scene(Base):
     __tablename__ = "scenes"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"))
+    project_id = Column(
+        UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE")
+    )
 
     # Scene 순서
     scene_order = Column(Integer, nullable=False)
 
     # AI가 생성한 Narration, Visual Prompt 등 저장
     content = Column(JSONB, default={})
-    
+
     # 생성된 Image URL, TTS URL, Duration 저장
     assets = Column(JSONB, default={})
 

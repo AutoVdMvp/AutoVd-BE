@@ -9,6 +9,7 @@ import edge_tts
 # 작업물 저장 Server Folder
 BASE_DIR = "temp_projects"
 
+
 def generate_assets(project_id: str, video_plan: dict) -> list:
     # Project Folder 생성
     project_path = os.path.join(BASE_DIR, project_id)
@@ -51,30 +52,36 @@ def generate_assets(project_id: str, video_plan: dict) -> list:
 
         for attempt in range(max_retries):
             try:
-                response = httpx.get(image_url, headers=headers, timeout=60.0, follow_redirects=True)
+                response = httpx.get(
+                    image_url, headers=headers, timeout=60.0, follow_redirects=True
+                )
                 response.raise_for_status()
 
-                with open(image_path, 'wb') as f:
+                with open(image_path, "wb") as f:
                     f.write(response.content)
-                
+
                 image_success = True
                 break
             except Exception as e:
-                print(f"[Scene {scene_num}] Image Download Failed (Try {attempt+1}/{max_retries}): {e}")
+                print(
+                    f"[Scene {scene_num}] Image Download Failed (Try {attempt+1}/{max_retries}): {e}"
+                )
                 if attempt < max_retries - 1:
                     time.sleep(5)
                 else:
                     print(f"[Scene {scene_num}] 최종 다운로드 실패")
-        
+
         if not image_success:
             continue
 
-        scene_assets.append({
-            "scene_number": scene_num,
-            "audio_path": audio_path,
-            "image_path": image_path,
-            "narration": narration
-        })
+        scene_assets.append(
+            {
+                "scene_number": scene_num,
+                "audio_path": audio_path,
+                "image_path": image_path,
+                "narration": narration,
+            }
+        )
 
         time.sleep(5)
 

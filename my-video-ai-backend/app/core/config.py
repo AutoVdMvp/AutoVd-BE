@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class Settings(BaseSettings):
     PROJECT_NAME: str
     VERSION: str
@@ -16,6 +17,7 @@ class Settings(BaseSettings):
 
     # .env 파일 읽어오기
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
 
 # settings 객체를 import하여 사용
 settings = Settings()

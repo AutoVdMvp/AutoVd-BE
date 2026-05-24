@@ -15,7 +15,7 @@ redis>=5.0.4
 
 # --- Video Processing & AI ---
 ffmpeg-python==0.2.0
-moviepy>=1.0.3
+moviepy>=1.0.3,<2.0.0       # MoviePy 1.x 버전으로 고정 (2.0.0 이상은 호환성 문제 발생)
 google-generativeai>=0.5.2
 edge-tts>=6.1.9
 httpx>=0.27.0
@@ -26,5 +26,8 @@ beautifulsoup4>=4.12.3
 google-auth>=2.29.0
 PyJWT>=2.8.0
 passlib[bcrypt]>=1.7.4
-
 requests>=2.31.0
+
+# --- Web Scraping & Crawling ---
+selenium>=4.20.0
+webdriver-manager>=4.0.1

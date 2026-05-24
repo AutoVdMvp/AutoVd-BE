@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   db:
@@ -20,7 +20,7 @@ services:
     restart: always
     ports:
       - "6379:6379"
-  
+
   api:
     build: .
     container_name: video_ai_api
@@ -35,7 +35,7 @@ services:
       - redis
     volumes:
       - .:/app
-  
+
   worker:
     build: .
     container_name: video_ai_worker

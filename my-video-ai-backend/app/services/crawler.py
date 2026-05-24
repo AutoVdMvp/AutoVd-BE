@@ -8,6 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
+
 def extract_article(url: str) -> dict:
     # Chrome Browser Option Setup
     chrome_options = Options()
@@ -20,8 +21,10 @@ def extract_article(url: str) -> dict:
 
     # Memory Issue 방지
     chrome_options.add_argument("--disable-dev-shm-usage")
-    
-    chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+
+    chrome_options.add_argument(
+        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    )
 
     driver = None
     try:
@@ -47,7 +50,7 @@ def extract_article(url: str) -> dict:
             "h2.media_end_head_headline",
             ".news_title",
             "h1",
-            "h2"
+            "h2",
         ]
 
         for selector in title_selectors:
@@ -66,7 +69,7 @@ def extract_article(url: str) -> dict:
             "#articleBodyContents",
             "#articleBody",
             ".article_view",
-            "article"
+            "article",
         ]
 
         main_content_found = False
@@ -76,7 +79,7 @@ def extract_article(url: str) -> dict:
                 article_text = content_area[0].text.strip()
                 main_content_found = True
                 break
-        
+
         # 만약 Content Area를 못 찾았다면, p 태그로 수집
         if not main_content_found or len(article_text) < 100:
             paragraphs = driver.find_elements(By.TAG_NAME, "p")
@@ -87,23 +90,35 @@ def extract_article(url: str) -> dict:
 
                 if len(text) > 30:
                     content_lines.append(text)
-            
+
             article_text = "\n".join(content_lines)
-        
+
         # 불필요한 내용 제거(예: 광고, 저작권 정보 등)
         # 이메일 주소 패턴 삭제
-        article_text = re.sub(r'[a-zA-Z0-9_.+-]@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', '', article_text)
+        article_text = re.sub(
+            r"[a-zA-Z0-9_.+-]@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", "", article_text
+        )
 
         # 사진 설명, 언론사명 삭제
-        article_text = re.sub(r'\[.*?\]\(.*?\)', '', article_text)
+        article_text = re.sub(r"\[.*?\]\(.*?\)", "", article_text)
 
         # 꼬리말이 포함된 줄 삭제
         cleaned_lines = []
-        noise_keywords = ["무단 전재", "재배포 금지", "Copyright", "ⓒ", "저작권자", "기자 =", "제공처", "구독하고", "메인에서 바로"]
+        noise_keywords = [
+            "무단 전재",
+            "재배포 금지",
+            "Copyright",
+            "ⓒ",
+            "저작권자",
+            "기자 =",
+            "제공처",
+            "구독하고",
+            "메인에서 바로",
+        ]
 
         for line in article_text.split("\n"):
             line = line.strip()
-            
+
             # Noise Keyword가 포함된 줄 삭제
             if any(keyword in line for keyword in noise_keywords):
                 continue
@@ -111,21 +126,18 @@ def extract_article(url: str) -> dict:
             # 너무 짧은 줄 삭제
             if len(line) > 10:
                 cleaned_lines.append(line)
-        
+
         # 최종 정제된 본문
         article_text = "\n".join(cleaned_lines)
 
         if len(article_text) < 100:
             raise ValueError("본문 내용을 충분히 추출하지 못했습니다.")
-        
-        return {
-            "title": title,
-            "content": article_text
-        }
-    
+
+        return {"title": title, "content": article_text}
+
     except Exception as e:
         raise Exception(f"기사 크롤링 실패 ({url}): {str(e)}")
-    
+
     finally:
         # Browser end
         if driver:

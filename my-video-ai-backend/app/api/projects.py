@@ -5,8 +5,10 @@ from app.core.celery_app import celery_app
 
 router = APIRouter()
 
+
 class VideoGenerateRequest(BaseModel):
     article_url: str
+
 
 @router.post("/generate")
 async def start_video_generation(request: VideoGenerateRequest):
@@ -20,8 +22,9 @@ async def start_video_generation(request: VideoGenerateRequest):
     return {
         "message": "영상 생성이 시작되었습니다.",
         "project_id": mock_project_id,
-        "task_id": task.id
+        "task_id": task.id,
     }
+
 
 @router.get("/tasks/{task_id}")
 async def get_task_status(task_id: str):
@@ -29,22 +32,18 @@ async def get_task_status(task_id: str):
     task_result = celery_app.AsyncResult(task_id)
 
     # 기본 응답 구조
-    response = {
-        "task_id": task_id,
-        "status": task_result.status,
-        "result": None
-    }
+    response = {"task_id": task_id, "status": task_result.status, "result": None}
 
     # 작업이 진행 중인 경우
     if task_result.status == "PROGRESS":
         response["progress"] = task_result.info
-    
+
     # 작업이 완료되었을 때
     elif task_result.status == "SUCCESS":
         response["result"] = task_result.result
-    
+
     # 작업이 실패했을 때
     elif task_result.status == "FAILURE":
         response["result"] = str(task_result.info)
-    
+
     return response

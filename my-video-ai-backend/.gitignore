@@ -3,8 +3,14 @@ __pycache__/
 *.py[cod]
 venv/
 
-# 환경 변수
+# 환경변수 파일 전체 차단
 .env
+.env.*
+.env.local
+.env.development
+.env.staging
+.env.production
+!.env.example
 
 # Video and Audio 작업물
 temp_projects/
