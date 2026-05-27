@@ -24,7 +24,7 @@ def generate_video_task(self, project_id: str, article_url: str):
 
         # 텍스트를 AI에게 전달
         video_plan = generate_video_plan(clean_text)
-
+        
         # 3. Media Asset 생성(TTS & Image)
         print(
             f"[{project_id}] 목소리와 이미지를 생성하고 다운로드합니다. (약 10 ~ 30초 소요)"
