@@ -20,3 +20,7 @@ assets/bgm/
 # MacOS System File
 .vscode/
 .DS_Store
+
+# Agents-skills 관련 파일
+.claude
+.antigravitycli
