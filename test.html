@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>구글 로그인 백엔드 연동 테스트</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body style="padding: 50px; font-family: sans-serif;">
+
+    <h2>구글 로그인 테스트 화면 (프론트엔드 시뮬레이터)</h2>
+    
+    <div id="g_id_onload"
+         data-client_id="159335724629-p5e5957siql3gb2i3785hek7b65qkkdq.apps.googleusercontent.com"
+         data-callback="handleCredentialResponse"
+         data-auto_prompt="false">
+    </div>
+    <div class="g_id_signin" data-type="standard"></div>
+
+    <h3 style="margin-top: 30px;">백엔드 응답 결과 (JWT 토큰):</h3>
+    <pre id="result" style="background: #f4f4f4; padding: 15px; border-radius: 5px; min-height: 50px;"></pre>
+
+    <script>
+        // 1. 구글 로그인이 성공하면 이 함수가 실행됩니다.
+        function handleCredentialResponse(response) {
+            console.log("구글로부터 받은 ID Token: ", response.credential);
+            
+            document.getElementById('result').innerText = "백엔드로 토큰 전송 중... (통신 중)";
+
+            // 2. 받은 토큰을 우리 FastAPI 백엔드로 전송 (POST 요청)
+            fetch("http://localhost:8000/api/v1/auth/google", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    credential: response.credential
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                // 3. 백엔드가 응답한 결과(자체 JWT)를 화면에 예쁘게 출력
+                document.getElementById('result').innerText = JSON.stringify(data, null, 4);
+            })
+            .catch(error => {
+                document.getElementById('result').innerText = "에러 발생: " + error;
+            });
+        }
+    </script>
+</body>
+</html>
