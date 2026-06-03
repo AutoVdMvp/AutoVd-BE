@@ -21,6 +21,7 @@ assets/bgm/
 .vscode/
 .DS_Store
 
-# Agents-skills 관련 파일
+# Agents-skills 중복 방지
 .claude
 .antigravitycli
+

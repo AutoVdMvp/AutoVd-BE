@@ -1,5 +1,5 @@
 # Python Version
-FROM python:3.14.5-slim
+FROM python:3.11-slim
 
 # 영상/자막 생성 task: MoviePy 렌더링, 오디오/영상 인코딩, TextClip 이미지 생성에 사용합니다.
 RUN apt-get update && apt-get install -y --no-install-recommends \

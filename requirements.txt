@@ -28,6 +28,12 @@ PyJWT>=2.8.0
 passlib[bcrypt]>=1.7.4
 requests>=2.31.0
 
+# FastAPI Form & File Upload
+python-multipart>=0.0.9
+
 # --- Web Scraping & Crawling ---
 selenium>=4.20.0
 webdriver-manager>=4.0.1
+
+# --- Prompt Templates (pipeline/prompts) ---
+PyYAML>=6.0

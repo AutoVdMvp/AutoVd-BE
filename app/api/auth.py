@@ -1,79 +1,182 @@
-"""
-Google OAuth2 소셜 로그인 인증 API 모듈
-
-Google ID Token을 검증하고, 최초 로그인 시 사용자를 DB에 등록하며,
-내부 서비스 인증에 사용할 JWT Access Token을 발급합니다.
-
-흐름:
-    프론트엔드(Google 로그인) → ID Token 전달 → 서버에서 검증 → JWT 발급
-"""
-
+import os
+import requests
+import jwt
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from google.oauth2 import id_token
-from google.auth.transport import requests
+from google.auth.transport import requests as google_requests
+
 from app.db.database import get_db
-from app.schemas.auth import GoogleLoginRequest, TokenResponse
+from app.db.redis_client import redis_client
+from app.schemas.auth import GoogleLoginRequest, TokenResponse, RefreshTokenRequest
 from app.models.models import User
-from app.core.security import create_access_token
+from app.core.security import create_access_token, create_refresh_token
+from app.core.config import settings
 
 router = APIRouter()
 
-# Google Cloud Console에서 발급받은 OAuth2 Client ID
-# 실제 배포 시 .env 파일로 관리하는 것을 권장합니다.
-GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
-
-
 @router.post("/google", response_model=TokenResponse)
 async def google_login(request: GoogleLoginRequest, db: AsyncSession = Depends(get_db)):
-    """
-    Google OAuth2 소셜 로그인 엔드포인트.
-
-    1. 프론트엔드가 전달한 Google ID Token을 Google 서버에서 검증
-    2. 토큰에서 이메일/이름을 추출하여 신규 사용자라면 DB에 등록
-    3. 내부 서비스용 JWT Access Token을 생성하여 반환
-
-    Args:
-        request: Google ID Token이 담긴 요청 바디
-        db: 비동기 DB 세션 (Dependency Injection)
-
-    Returns:
-        TokenResponse: Bearer JWT Access Token
-
-    Raises:
-        HTTPException 400: 토큰에 이메일 정보가 없는 경우
-        HTTPException 401: Google Token 검증 실패 시
-    """
     try:
-        # Google 공개 키로 ID Token의 서명 및 만료 여부 검증
+        # Google Token 검증
         idinfo = id_token.verify_oauth2_token(
-            request.credential, requests.Request(), GOOGLE_CLIENT_ID
+            request.credential,
+            google_requests.Request(),
+            settings.GOOGLE_CLIENT_ID,
+            clock_skew_in_seconds=10
         )
 
-        # 검증된 토큰에서 사용자 정보 추출
         email = idinfo.get("email")
         name = idinfo.get("name")
 
         if not email:
             raise HTTPException(status_code=400, detail="Email not found in token")
 
-        # DB에서 기존 회원 여부 확인
+        # DB에서 User 확인
         result = await db.execute(select(User).where(User.email == email))
         user = result.scalars().first()
 
-        # 신규 사용자라면 DB에 등록 (자동 회원가입)
+        # User에 없으면 DB에 저장
         if not user:
             user = User(email=email, nickname=name)
             db.add(user)
             await db.commit()
-            await db.refresh(user)  # DB에서 생성된 id(UUID) 등을 반영
+            await db.refresh(user)
 
-        # 사용자 UUID를 payload로 담아 JWT 발급
+        # JWT 발급
         access_token = create_access_token(data={"sub": str(user.id)})
+        refresh_token = await create_refresh_token(data={"sub": str(user.id)}, user_id=str(user.id))
 
-        return TokenResponse(access_token=access_token)
-
-    except ValueError:
-        # 서명 불일치, 만료, audience 불일치 등 Token 검증 실패
+        # Test Response
+        return TokenResponse(access_token=access_token, refresh_token=refresh_token)
+    
+    except ValueError as e:
+        # Token 검증 실패
+        print(f"Google Token verification failed: {e}")
         raise HTTPException(status_code=401, detail="Invalid Google Token")
+
+@router.get("/kakao/login")
+async def kakao_login_redirect():
+    kakao_auth_url = (
+        f"https://kauth.kakao.com/oauth/authorize?"
+        f"client_id={settings.KAKAO_CLIENT_ID}&redirect_uri={settings.KAKAO_REDIRECT_URI}&response_type=code"
+        f"&prompt=consent"
+    )
+    return RedirectResponse(url=kakao_auth_url)
+
+@router.get("/kakao/callback")
+async def kakao_callback(code: str, db: AsyncSession = Depends(get_db)):
+    # Kakao Access Token 요청
+    token_req_data = {
+        "grant_type": "authorization_code",
+        "client_id": settings.KAKAO_CLIENT_ID,
+        "redirect_uri": settings.KAKAO_REDIRECT_URI,
+        "client_secret": settings.KAKAO_CLIENT_SECRET,
+        "code": code,
+    }
+    token_headers = {"Content-type": "application/x-www-form-urlencoded;charset=utf-8"}
+    token_res = requests.post("https://kauth.kakao.com/oauth/token", data=token_req_data, headers=token_headers)
+
+    if token_res.status_code != 200:
+        raise HTTPException(status_code=400, detail="Failed to get Kakao access token")
+    
+    kakao_token = token_res.json().get("access_token")
+
+    # Kakao User Info 조회
+    user_info_headers = {
+        "Authorization": f"Bearer {kakao_token}",
+        "Content-type": "application/x-www-form-urlencoded;charset=utf-8"
+    }
+    user_info_res = requests.get("https://kapi.kakao.com/v2/user/me", headers=user_info_headers)
+
+    if user_info_res.status_code != 200:
+        raise HTTPException(status_code=400, detail="Failed to get Kakao user info")
+    
+    user_info = user_info_res.json()
+    kakao_id = user_info.get("id")
+    kakao_account = user_info.get("kakao_account", {})
+    email = kakao_account.get("email")
+
+    # Nickname 가져오기(없으면 '카카오유저'로 대체)
+    profile = kakao_account.get("profile", {})
+    name = profile.get("nickname", "카카오유저")
+
+    if not email:
+        email = f"kakao_{kakao_id}@kakao.dummy.com"
+    
+    # DB Logic 통합
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalars().first()
+
+    if not user:
+        user = User(email=email, nickname=name)
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+    
+    # JWT 발급
+    access_token = create_access_token(data={"sub": str(user.id)})
+    refresh_token = await create_refresh_token(data={"sub": str(user.id)}, user_id=str(user.id))
+
+    return {
+        "message": "Kakao Login Successful",
+        "email": email,
+        "access_token": access_token,
+        "refresh_token": refresh_token
+    }
+
+@router.post("/refresh", response_model=TokenResponse)
+async def refresh_access_token(request: RefreshTokenRequest):
+    try:
+        # Refresh Token 검증
+        payload = jwt.decode(
+            request.refresh_token,
+            settings.JWT_SECRET_KEY,
+            algorithms=[settings.JWT_ALGORITHM]
+        )
+        user_id = payload.get("sub")
+
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+        
+        # Redis 중앙 통제소 확인
+        stored_token = await redis_client.get(f"refresh_token:{user_id}")
+
+        # Redis에 토큰이 없거나, 다르면 차단
+        if stored_token is None or stored_token != request.refresh_token:
+            raise HTTPException(status_code=401, detail="Refresh token is invalid or has been revoked")
+        
+        # 새로운 Access Token 발급
+        new_access_token = create_access_token(data={"sub": user_id})
+
+        return TokenResponse(
+            access_token=new_access_token,
+            refresh_token=request.refresh_token
+        )
+    
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Refresh token has expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    
+@router.post("/logout")
+async def logout(request: RefreshTokenRequest):
+    try:
+        # Refresh Token 검증
+        payload = jwt.decode(
+            request.refresh_token,
+            settings.JWT_SECRET_KEY,
+            algorithms=[settings.JWT_ALGORITHM]
+        )
+        user_id = payload.get("sub")
+
+        # Redis에서 해당 User의 Refresh Token 삭제
+        if user_id:
+            await redis_client.delete(f"refresh_token:{user_id}")
+    
+    except jwt.PyJWTError:
+        pass
+
+    return {"message": "Logged Out Successfully"}

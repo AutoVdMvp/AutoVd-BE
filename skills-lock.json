@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "skills": {
+    "architecture-blueprint-generator": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "skillPath": "skills/architecture-blueprint-generator/SKILL.md",
+      "computedHash": "9b20f13d1d96ba1c2550e1ce535f932e943c42939d3fae906a9e0d6c1bfb471a"
+    },
+    "architecture-patterns": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/architecture-patterns/SKILL.md",
+      "computedHash": "df4b1173a32fe59a5da5a9cadd9bd23c21a9e944e3d26827d0d98f6b9afd5d11"
+    },
+    "grill-with-docs": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
+      "computedHash": "eb0e91e84277283dc2b23ed544399e53afd6b5287e5b6929f25fe8aa608e164b"
+    },
+    "software-architecture": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/software-architecture/SKILL.md",
+      "computedHash": "19ee028010077ff687e3fcf9613b4f9b9d6c839a15396007d9ba263f6930ec6a"
+    },
+    "write-docs": {
+      "source": "tldraw/tldraw",
+      "sourceType": "github",
+      "skillPath": "skills/write-docs/SKILL.md",
+      "computedHash": "bb8ab8017a044c1b44d2f89f3f77f3715ea9ec667bd8bcfa18df658dabc72ac2"
+    }
+  }
+}
