@@ -24,4 +24,5 @@ assets/bgm/
 # Agents-skills 중복 방지
 .claude
 .antigravitycli
-
+.agents
+.skills-lock.json
