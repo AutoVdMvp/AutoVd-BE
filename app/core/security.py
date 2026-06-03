@@ -14,7 +14,7 @@ def create_access_token(data: dict):
     # 만료 시간 Setting
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
-
+    
     # JWT Token 생성
     encoded_jwt = jwt.encode(
         to_encode,
