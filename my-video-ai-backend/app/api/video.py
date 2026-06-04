@@ -1,6 +1,7 @@
 import os
 import uuid
 from fastapi import APIRouter, Query, Depends, HTTPException
+from fastapi.responses import FileResponse
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -12,7 +13,8 @@ from app.core.celery_app import celery_app
 from app.schemas.response import CommonResponse
 from app.services.tasks import generate_video_task
 from app.db.database import get_db
-from app.models.models import Project
+from app.models.models import Project, User
+from app.api.deps import get_current_user
 
 router = APIRouter()
 
@@ -36,7 +38,7 @@ class VideoListResponse(BaseModel):
 
 # [POST] 영상 생성 요청 API
 @router.post("/prompt/remake_video", response_model=CommonResponse[RemakeVideoResponse])
-async def remake_video(body: RemakeVideoRequest, db: AsyncSession = Depends(get_db)):
+async def remake_video(body: RemakeVideoRequest, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     # 문자열 ID를 UUID 객체로 변환
     try:
         project_uuid = uuid.UUID(body.id)
@@ -44,7 +46,7 @@ async def remake_video(body: RemakeVideoRequest, db: AsyncSession = Depends(get_
         raise HTTPException(status_code=400, detail="유효하지 않은 Project ID 입니다.")
     
     # DB에 Project가 존재하는지 조회
-    result = await db.execute(select(Project).where(Project.id == project_uuid))
+    result = await db.execute(select(Project).where(Project.id == project_uuid, Project.user_id == current_user.id))
     project = result.scalars().first()
 
     if not project:
@@ -142,15 +144,9 @@ async def get_video_status(id: str = Query(..., description="Celery Task ID"), d
 
 # [GET] 영상 목록 조회 API
 @router.get("/vd/list", response_model=CommonResponse[List[VideoListResponse]])
-async def get_video_list(userId: str = Query(..., description="유저 UUID"), db: AsyncSession = Depends(get_db)):
-    # userID도 DB 조회 전 UUID 변환
-    try:
-        user_uuid = uuid.UUID(userId)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="유효하지 않은 UserID 입니다.")
-    
+async def get_video_list(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     # DB에서 해당 User의 Project 가져오기
-    result = await db.execute(select(Project).where(Project.user_id == user_uuid))
+    result = await db.execute(select(Project).where(Project.user_id == current_user.id))
     projects = result.scalars().all()
 
     # 가져온 Data API 규격에 맞게 조합
@@ -162,4 +158,34 @@ async def get_video_list(userId: str = Query(..., description="유저 UUID"), db
         status=200,
         message="데이터를 성공적으로 가져왔습니다.",
         data=video_list
+    )
+
+# [GET] 영상 Download API
+@router.get("/download/{project_id}")
+async def download_video(project_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    try:
+        proj_uuid = uuid.UUID(project_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="유효하지 않은 Project ID 입니다.")
+    
+    # 내 Project가 맞는지 DB 확인
+    result = await db.execute(select(Project).where(Project.id == proj_uuid, Project.user_id == current_user.id))
+    project = result.scalars().first()
+
+    if not project:
+        raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없거나 권한이 없습니다.")
+    
+    # 임시 파일 제공
+    file_path = "temp_projects/test_video.mp4"
+
+    # 파일 존재 여부 확인
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="영상 파일이 아직 생성되지 않았거나 삭제되었습니다.")
+    
+    # Download Response
+    return FileResponse(
+        path=file_path,
+        filename=f"aivideo_{project_id}.mp4",
+        media_type="video/mp4",
+        headers={"Content-Disposition": f"attachment; filename=aivideo_{project_id}.mp4"}
     )
