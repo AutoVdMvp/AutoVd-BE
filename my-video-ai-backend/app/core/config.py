@@ -1,6 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 class Settings(BaseSettings):
     PROJECT_NAME: str
     VERSION: str
@@ -15,9 +14,21 @@ class Settings(BaseSettings):
     LLM_API_KEY: str
     GEMINI_API_KEY: str
 
-    # .env 파일 읽어오기
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str | None = None
+    GOOGLE_CLIENT_SECRET: str | None = None
+    GOOGLE_REDIRECT_URI: str | None = None
 
+    # Kakao OAuth
+    KAKAO_CLIENT_ID: str | None = None
+    KAKAO_CLIENT_SECRET: str | None = None
+    KAKAO_REDIRECT_URI: str | None = None
+
+    # Redis Settings
+    REDIS_URL: str = "redis://redis:6479/0"
+
+    # .env 파일 읽어오기
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 # settings 객체를 import하여 사용
 settings = Settings()

@@ -1,4 +1,4 @@
-version: "3.8"
+version: '3.8'
 
 services:
   db:
@@ -20,7 +20,7 @@ services:
     restart: always
     ports:
       - "6379:6379"
-
+  
   api:
     build: .
     container_name: video_ai_api
@@ -35,11 +35,11 @@ services:
       - redis
     volumes:
       - .:/app
-
+  
   worker:
     build: .
     container_name: video_ai_worker
-    command: celery -A app.core.celery_app worker --loglevel=info
+    command: celery -A app.core.celery_app worker --loglevel=info -P threads --concurrency=1
     environment:
       - DATABASE_URL=postgresql+asyncpg://ai_user:ai_password@db:5432/video_ai_db
       - CELERY_BROKER_URL=redis://redis:6379/0
@@ -50,6 +50,7 @@ services:
       - api
     volumes:
       - .:/app
+    shm_size: '2gb'
 
 volumes:
   postgres_data:
