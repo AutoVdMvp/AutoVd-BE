@@ -14,3 +14,5 @@ assets/bgm/
 # MacOS System File
 .vscode/
 .DS_Store
+
+ngrok.exe

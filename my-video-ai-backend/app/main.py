@@ -35,10 +35,7 @@ app = FastAPI(
 # CORS Middleware Setup
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5500",
-        "http://127.0.0.1:5500",
-    ], # 실제 배포 시 프론트 주소
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
