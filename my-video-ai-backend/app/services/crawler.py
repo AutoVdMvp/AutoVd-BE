@@ -1,11 +1,13 @@
 import time
 import re
+from fastapi import HTTPException
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, WebDriverException
 from webdriver_manager.chrome import ChromeDriverManager
 
 def extract_article(url: str) -> dict:
@@ -28,6 +30,9 @@ def extract_article(url: str) -> dict:
         # Chrome Driver Setup and Browser Launch
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=chrome_options)
+
+        # Timeout Setting
+        driver.set_page_load_timeout(15)
 
         # Target URL 접속
         driver.get(url)
@@ -123,8 +128,14 @@ def extract_article(url: str) -> dict:
             "content": article_text
         }
     
+    except TimeoutException:
+        raise HTTPException(status_code=504, detail="사이트 접속이 지연되고 있습니다. 다른 링크를 시도해 주세요.")
+    
+    except WebDriverException as e:
+        raise HTTPException(status_code=502, detail="사이트에 접근할 수 없습니다. 유효한 링크인지 확인해 주세요.")
+    
     except Exception as e:
-        raise Exception(f"기사 크롤링 실패 ({url}): {str(e)}")
+        raise HTTPException(status_code=500, detail=f"기사를 가져오는 중 오류가 발생했습니다. {str(e)}")
     
     finally:
         # Browser end

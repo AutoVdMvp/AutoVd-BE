@@ -29,7 +29,12 @@ def generate_assets(project_id: str, video_plan: dict) -> list:
         try:
             voice = "ko-KR-SunHiNeural"
             communicate = edge_tts.Communicate(narration, voice)
-            asyncio.run(communicate.save(audio_path))
+            asyncio.run(asyncio.wait_for(communicate.save(audio_path), timeout=15.0))
+        
+        except asyncio.TimeoutError:
+            print(f"[Scene {scene_num}] TTS 생성 시간 초과")
+            continue
+
         except Exception as e:
             print(f"[Scene {scene_num}] 음성 저장 실패: {e}")
             continue
@@ -51,7 +56,7 @@ def generate_assets(project_id: str, video_plan: dict) -> list:
 
         for attempt in range(max_retries):
             try:
-                response = httpx.get(image_url, headers=headers, timeout=120.0, follow_redirects=True)
+                response = httpx.get(image_url, headers=headers, timeout=15.0, follow_redirects=True)
                 response.raise_for_status()
 
                 with open(image_path, 'wb') as f:
@@ -59,12 +64,20 @@ def generate_assets(project_id: str, video_plan: dict) -> list:
                 
                 image_success = True
                 break
+            
+            except httpx.TimeoutException:
+                print(f"[Scene {scene_num}] 이미지 다운로드 시간 초과 (Try {attempt+1}/{max_retries})")
+
+            except httpx.HTTPStatusError as e:
+                print(f"[Scene {scene_num}] Image Server Error {e.response.status_code}")
+
             except Exception as e:
                 print(f"[Scene {scene_num}] Image Download Failed (Try {attempt+1}/{max_retries}): {e}")
-                if attempt < max_retries - 1:
-                    time.sleep(5)
-                else:
-                    print(f"[Scene {scene_num}] 최종 다운로드 실패")
+
+            if attempt < max_retries - 1:
+                time.sleep(3)
+            else:
+                print(f"[Scene {scene_num}] 최종 다운로드 실패")
         
         if not image_success:
             continue
