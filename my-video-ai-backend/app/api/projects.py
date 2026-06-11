@@ -8,7 +8,8 @@ from pydantic import BaseModel
 from app.db.database import get_db
 from app.api.deps import get_current_user
 from app.models.models import User, Project
-from app.schemas.projects import ProjectResponse                                       
+from app.schemas.projects import ProjectResponse
+from app.services.tasks import generate_video_task                                   
 
 router = APIRouter()
 
@@ -53,6 +54,8 @@ async def create_project(request: CreateProjectRequest, db: AsyncSession = Depen
     db.add(new_project)
     await db.commit()
     await db.refresh(new_project)
+
+    generate_video_task.delay(str(new_project.id), new_project.original_url)
 
     # DB에서 발급된 UUID 반환
     return {
