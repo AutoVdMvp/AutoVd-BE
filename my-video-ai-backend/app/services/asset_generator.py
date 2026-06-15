@@ -80,7 +80,19 @@ def generate_assets(project_id: str, video_plan: dict) -> list:
                 print(f"[Scene {scene_num}] 최종 다운로드 실패")
         
         if not image_success:
-            continue
+            print(f"[Scene {scene_num}] 이미지 생성 실패. 더미 이미지로 대체합니다.")
+
+            dummy_url = "https://placehold.co/1080x1920/png?text=Image+Failed"
+
+            try:
+                dummy_response = httpx.get(dummy_url, headers=headers, timeout=15.0, verify=False, follow_redirects=True)
+                dummy_response.raise_for_status()
+                with open(image_path, 'wb') as f:
+                    f.write(dummy_response.content)
+                print(f"[Scene {scene_num}] 더미 이미지 저장 완료")
+            except Exception as dummy_e:
+                print(f"[Scene {scene_num}] 더미 이미지 다운로드 실패: {dummy_e}")
+                continue
 
         scene_assets.append({
             "scene_number": scene_num,

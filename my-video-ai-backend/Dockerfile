@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # ImageMagick 보안 정책 우회
-RUN sed -i 's/<policy domain="path" rights="none" pattern="@\*"//g' /etc/ImageMagick-6/policy.xml || true
+RUN find /etc -name "policy.xml" -exec sed -i 's/"none"/"read|write"/g' {} +
 
 # 작업 폴더 설정
 WORKDIR /app

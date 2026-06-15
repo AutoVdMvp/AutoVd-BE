@@ -22,7 +22,8 @@ class Settings(BaseSettings):
     # Kakao OAuth
     KAKAO_CLIENT_ID: str | None = None
     KAKAO_CLIENT_SECRET: str | None = None
-    KAKAO_REDIRECT_URI: str | None = None
+    KAKAO_REDIRECT_URI_BACKEND: str | None = None
+    KAKAO_REDIRECT_URI_FRONTEND: str | None = None
 
     # Redis Settings
     REDIS_URL: str = "redis://redis:6479/0"

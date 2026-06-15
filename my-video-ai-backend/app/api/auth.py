@@ -1,7 +1,7 @@
 import os
 import requests
 import jwt
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, Cookie
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -10,7 +10,7 @@ from google.auth.transport import requests as google_requests
 
 from app.db.database import get_db
 from app.db.redis_client import redis_client
-from app.schemas.auth import GoogleLoginRequest, TokenResponse, RefreshTokenRequest
+from app.schemas.auth import GoogleLoginRequest, TokenResponse
 from app.models.models import User
 from app.core.security import create_access_token, create_refresh_token
 from app.core.config import settings
@@ -18,7 +18,7 @@ from app.core.config import settings
 router = APIRouter()
 
 @router.post("/google", response_model=TokenResponse)
-async def google_login(request: GoogleLoginRequest, db: AsyncSession = Depends(get_db)):
+async def google_login(request: GoogleLoginRequest, response: Response, db: AsyncSession = Depends(get_db)):
     try:
         # Google Token 검증
         idinfo = id_token.verify_oauth2_token(
@@ -49,8 +49,18 @@ async def google_login(request: GoogleLoginRequest, db: AsyncSession = Depends(g
         access_token = create_access_token(data={"sub": str(user.id)})
         refresh_token = await create_refresh_token(data={"sub": str(user.id)}, user_id=str(user.id))
 
+        # Refresh Token을 HttpOnly Cookie에 저장
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            path="/api/v1/auth/refresh",
+            samesite="lax",
+            secure=False, # HTTPS 배포 시 True로 변경
+        )
+
         # Test Response
-        return TokenResponse(access_token=access_token, refresh_token=refresh_token)
+        return TokenResponse(access_token=access_token)
     
     except ValueError as e:
         # Token 검증 실패
@@ -58,21 +68,25 @@ async def google_login(request: GoogleLoginRequest, db: AsyncSession = Depends(g
         raise HTTPException(status_code=401, detail="Invalid Google Token")
 
 @router.get("/kakao/login")
-async def kakao_login_redirect():
+async def kakao_login_redirect(redirect_uri: str = Query(None)):
+    target_uri = redirect_uri or settings.KAKAO_REDIRECT_URI_BACKEND
+
     kakao_auth_url = (
         f"https://kauth.kakao.com/oauth/authorize?"
-        f"client_id={settings.KAKAO_CLIENT_ID}&redirect_uri={settings.KAKAO_REDIRECT_URI}&response_type=code"
+        f"client_id={settings.KAKAO_CLIENT_ID}&redirect_uri={target_uri}&response_type=code"
         f"&prompt=consent"
     )
     return RedirectResponse(url=kakao_auth_url)
 
 @router.get("/kakao/callback")
-async def kakao_callback(code: str, db: AsyncSession = Depends(get_db)):
+async def kakao_callback(code: str, response: Response, redirect_uri: str = Query(None), db: AsyncSession = Depends(get_db)):
+    target_uri = redirect_uri or settings.KAKAO_REDIRECT_URI_BACKEND
+
     # Kakao Access Token 요청
     token_req_data = {
         "grant_type": "authorization_code",
         "client_id": settings.KAKAO_CLIENT_ID,
-        "redirect_uri": settings.KAKAO_REDIRECT_URI,
+        "redirect_uri": target_uri,
         "client_secret": settings.KAKAO_CLIENT_SECRET,
         "code": code,
     }
@@ -120,19 +134,31 @@ async def kakao_callback(code: str, db: AsyncSession = Depends(get_db)):
     access_token = create_access_token(data={"sub": str(user.id)})
     refresh_token = await create_refresh_token(data={"sub": str(user.id)}, user_id=str(user.id))
 
+    # Refresh Token을 HttpOnly Cookie에 저장
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        path="/api/v1/auth/refresh",
+        samesite="lax",
+        secure=False, # HTTPS로 배포 시 True
+    )
+
     return {
         "message": "Kakao Login Successful",
         "email": email,
         "access_token": access_token,
-        "refresh_token": refresh_token
     }
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh_access_token(request: RefreshTokenRequest):
+async def refresh_access_token(refresh_token: str | None = Cookie(None)):
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="Refresh token missing in cookie")
+
     try:
         # Refresh Token 검증
         payload = jwt.decode(
-            request.refresh_token,
+            refresh_token,
             settings.JWT_SECRET_KEY,
             algorithms=[settings.JWT_ALGORITHM]
         )
@@ -145,16 +171,13 @@ async def refresh_access_token(request: RefreshTokenRequest):
         stored_token = await redis_client.get(f"refresh_token:{user_id}")
 
         # Redis에 토큰이 없거나, 다르면 차단
-        if stored_token is None or stored_token != request.refresh_token:
+        if stored_token is None or stored_token != refresh_token:
             raise HTTPException(status_code=401, detail="Refresh token is invalid or has been revoked")
         
         # 새로운 Access Token 발급
         new_access_token = create_access_token(data={"sub": user_id})
 
-        return TokenResponse(
-            access_token=new_access_token,
-            refresh_token=request.refresh_token
-        )
+        return TokenResponse(access_token=new_access_token)
     
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Refresh token has expired")
@@ -162,21 +185,31 @@ async def refresh_access_token(request: RefreshTokenRequest):
         raise HTTPException(status_code=401, detail="Invalid refresh token")
     
 @router.post("/logout")
-async def logout(request: RefreshTokenRequest):
+async def logout(response: Response, refresh_token: str | None = Cookie(None)):
     try:
-        # Refresh Token 검증
-        payload = jwt.decode(
-            request.refresh_token,
-            settings.JWT_SECRET_KEY,
-            algorithms=[settings.JWT_ALGORITHM]
-        )
-        user_id = payload.get("sub")
+        if refresh_token:
+            # Refresh Token 검증
+            payload = jwt.decode(
+                refresh_token,
+                settings.JWT_SECRET_KEY,
+                algorithms=[settings.JWT_ALGORITHM]
+            )
+            user_id = payload.get("sub")
 
-        # Redis에서 해당 User의 Refresh Token 삭제
-        if user_id:
-            await redis_client.delete(f"refresh_token:{user_id}")
+            # Redis에서 해당 User의 Refresh Token 삭제
+            if user_id:
+                await redis_client.delete(f"refresh_token:{user_id}")
     
     except jwt.PyJWTError:
         pass
+
+    # FrontEnd Cookie 삭제
+    response.delete_cookie(
+        key="refresh_token",
+        path="/api/v1/auth/refresh",
+        httponly=True,
+        samesite="lax",
+        secure=False, # HTTPS 배포 시 True
+    )
 
     return {"message": "Logged Out Successfully"}
