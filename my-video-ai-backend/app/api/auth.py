@@ -55,8 +55,8 @@ async def google_login(request: GoogleLoginRequest, response: Response, db: Asyn
             value=refresh_token,
             httponly=True,
             path="/api/v1/auth/refresh",
-            samesite="lax",
-            secure=False, # HTTPS 배포 시 True로 변경
+            samesite="none",
+            secure=True,
         )
 
         # Test Response
@@ -140,8 +140,8 @@ async def kakao_callback(code: str, response: Response, redirect_uri: str = Quer
         value=refresh_token,
         httponly=True,
         path="/api/v1/auth/refresh",
-        samesite="lax",
-        secure=False, # HTTPS로 배포 시 True
+        samesite="none",
+        secure=True,
     )
 
     return {
@@ -208,8 +208,8 @@ async def logout(response: Response, refresh_token: str | None = Cookie(None)):
         key="refresh_token",
         path="/api/v1/auth/refresh",
         httponly=True,
-        samesite="lax",
-        secure=False, # HTTPS 배포 시 True
+        samesite="none",
+        secure=True,
     )
 
     return {"message": "Logged Out Successfully"}
