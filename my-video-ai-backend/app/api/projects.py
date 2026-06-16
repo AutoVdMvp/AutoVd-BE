@@ -18,7 +18,7 @@ class CreateProjectRequest(BaseModel):
     article_url: str
 
 # Project List 조회 API
-@router.get("/", response_model=List[ProjectResponse])
+@router.get("", response_model=List[ProjectResponse])
 async def get_my_projects(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     # 현재 로그인한 User의 Project 조회
     result = await db.execute(select(Project).where(Project.user_id == current_user.id))
