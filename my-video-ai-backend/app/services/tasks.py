@@ -9,7 +9,7 @@ from app.core.celery_app import celery_app
 from app.db.database import AsyncSessionLocal
 from app.models.models import Project
 from app.schemas.video import VideoGenerateRequest
-from app.services.video_generation import run_pipeline
+from app.services.pipeline import run_pipeline
 
 # Celery Wolker 전용 DB Update
 async def update_project_in_db(project_id: str, status: str, vd_url: str = None):
