@@ -1,0 +1,9 @@
+# TTS(음성 합성) 설정.
+# voice : edge-tts 음성 이름
+# rate  : 말하기 속도 (예: "+0%", "-10%", "+20%")
+# pitch : 음높이 (예: "+0Hz", "-5Hz")
+# volume: 음량 (예: "+0%", "-10%")
+voice: "ko-KR-SunHiNeural"
+rate: "+0%"
+pitch: "+0Hz"
+volume: "+0%"
