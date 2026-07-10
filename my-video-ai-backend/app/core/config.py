@@ -28,6 +28,14 @@ class Settings(BaseSettings):
     # Redis Settings
     REDIS_URL: str = "redis://redis:6479/0"
 
+    # Celery Settings
+    CELERY_BROKER_URL: str = "redis://redis:6479/0"
+    CELERY_RESULT_BACKEND: str = "redis://redis:6479/0"
+
+    # Video Generation Settings
+    WORKSPACE_DIR: str = "temp_projects"
+    VIDEO_FONT_PATH: str = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
+
     # .env 파일 읽어오기
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
