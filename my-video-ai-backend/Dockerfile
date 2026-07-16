@@ -56,7 +56,7 @@ RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearm
 
 # ImageMagick 보안 정책 우회
 RUN find /etc -name "policy.xml" -exec sed -i 's/"none"/"read|write"/g' {} +
-RUN find /etc -path '*/ImageMagick-*/policy.xml' -exec sed -i '/pattern="@\*"/d' {} \; || true'
+RUN find /etc -path '*/ImageMagick-*/policy.xml' -exec sed -i '/pattern="@\*"/d' {} \; || true
 
 # 컨테이너 내부 한국어 자막 폰트 환경 변수
 ENV VIDEO_FONT_PATH=/usr/share/fonts/truetype/nanum/NanumGothic.ttf
