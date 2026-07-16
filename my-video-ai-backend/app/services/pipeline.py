@@ -3,15 +3,15 @@
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 
-from app.services.video_generation.ai.image_generator import ImageGenerator
-from app.services.video_generation.ai.image_prompt_generator import ImagePromptGenerator
-from app.services.video_generation.ai.script_generator import ScriptGenerator
-from app.services.video_generation.ai.tts_generator import TTSGenerator
-from app.services.video_generation.artifacts.local_store import LocalStore
-from app.services.video_generation.crawling.crawler import Crawler
-from app.services.video_generation.render.video_compositor import VideoCompositor
-from app.services.video_generation.subtitle.subtitle_builder import SubtitleBuilder
-from app.services.video_generation.timeline.duration_aligner import DurationAligner
+from app.ai.image_generator import ImageGenerator
+from app.ai.image_prompt_generator import ImagePromptGenerator
+from app.ai.script_generator import ScriptGenerator
+from app.ai.tts_generator import TTSGenerator
+from app.services.artifacts.local_store import LocalStore
+from app.services.crawling.crawler import Crawler
+from app.services.render.video_compositor import VideoCompositor
+from app.services.render.subtitle_builder import SubtitleBuilder
+from app.services.timeline.duration_aligner import DurationAligner
 from app.schemas.video import VideoGenerateRequest, VideoOutput
 
 ProgressCallback = Callable[[str, int], None]
