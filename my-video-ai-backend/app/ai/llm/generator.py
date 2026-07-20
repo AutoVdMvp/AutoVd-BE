@@ -2,8 +2,8 @@ import json
 from typing import Any
 from pydantic import ValidationError
 
-from app.ai.gemini_client import GeminiClient
-from app.ai.prompts.script_prompt import SYSTEM_INSTRUCTION
+from app.ai.llm.client import GeminiClient
+from app.ai.llm.prompt import SYSTEM_INSTRUCTION
 from app.schemas.video import (
     CrawledSource,
     ScriptResult,
