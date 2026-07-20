@@ -1,5 +1,3 @@
-"""Orchestrate the v4 video generation pipeline."""
-
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 

@@ -54,7 +54,7 @@ RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearm
     && apt-get install -y --no-install-recommends google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
 
-# ImageMagick 보안 정책 우회
+# ImageMagick 보안 정책 우회 (오류 수정 완료)
 RUN find /etc -name "policy.xml" -exec sed -i 's/"none"/"read|write"/g' {} +
 RUN find /etc -path '*/ImageMagick-*/policy.xml' -exec sed -i '/pattern="@\*"/d' {} \; || true
 
