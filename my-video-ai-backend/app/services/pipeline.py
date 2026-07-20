@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from app.ai.image.generator import ImageGenerator
 from app.ai.image.prompt_generator import ImagePromptGenerator
 from app.ai.llm.generator import ScriptGenerator
-from app.ai.tts_generator import TTSGenerator
+from app.ai.tts.generator import TTSGenerator
 from app.services.artifacts.local_store import LocalStore
 from app.services.crawling.crawler import Crawler
 from app.services.render.video_compositor import VideoCompositor
