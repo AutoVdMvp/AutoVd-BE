@@ -2,7 +2,7 @@
 FROM python:3.11-slim
 
 # 영상/자막 생성 및 시스템 기본 도구 설치
-RUN apt-get update && apt-get install -y --no-install-recommends\
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     imagemagick \
     fonts-nanum \
