@@ -1,8 +1,8 @@
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 
-from app.ai.image_generator import ImageGenerator
-from app.ai.image_prompt_generator import ImagePromptGenerator
+from app.ai.image.generator import ImageGenerator
+from app.ai.image.prompt_generator import ImagePromptGenerator
 from app.ai.llm.generator import ScriptGenerator
 from app.ai.tts_generator import TTSGenerator
 from app.services.artifacts.local_store import LocalStore
