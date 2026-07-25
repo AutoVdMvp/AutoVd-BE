@@ -5,7 +5,7 @@ from app.schemas.video import BuiltSubtitle, Scene
 class SubtitleBuilder:
     """Scene[] -> BuiltSubtitle[] without external calls."""
 
-    def __init__(self, *, max_chars_per_line: int = 18, max_lines: int = 2) -> None:
+    def __init__(self, *, max_chars_per_line: int = 25, max_lines: int = 2) -> None:
         self.max_chars_per_line = max_chars_per_line
         self.max_lines = max_lines
 
