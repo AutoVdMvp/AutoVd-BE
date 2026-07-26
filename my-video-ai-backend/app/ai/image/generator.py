@@ -4,6 +4,7 @@ from app.ai.image.client import IMAGE_SIZE, PollinationsImageClient
 from app.services.artifacts.local_store import LocalStore
 from app.schemas.video import GeneratedImage, ImagePromptResult
 
+
 class ImageGenerator:
     """ImagePromptResult -> GeneratedImage[]."""
 
@@ -15,7 +16,11 @@ class ImageGenerator:
         self.client = client or PollinationsImageClient()
         self.store = store or LocalStore()
 
-    def generate(self, project_id: str, prompt_result: ImagePromptResult) -> list[GeneratedImage]:
+    def generate(
+        self,
+        project_id: str,
+        prompt_result: ImagePromptResult,
+    ) -> list[GeneratedImage]:
         if not prompt_result.prompts:
             raise ValueError("이미지 프롬프트가 없어서 이미지를 생성할 수 없습니다.")
 

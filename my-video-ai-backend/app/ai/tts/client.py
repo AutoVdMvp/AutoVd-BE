@@ -6,7 +6,6 @@ import edge_tts
 import yaml
 from mutagen.mp3 import MP3
 
-
 _CONFIG_PATH = Path(__file__).resolve().with_name("config.yaml")
 
 _DEFAULTS = {

@@ -5,7 +5,6 @@ import urllib.parse
 
 import httpx
 
-
 IMAGE_SIZE = (1080, 1920)
 
 
@@ -17,10 +16,7 @@ class PollinationsImageClient:
     RETRY_DELAY_SECONDS = 5
     POST_SUCCESS_DELAY_SECONDS = 3
     TIMEOUT_SECONDS = 120.0
-    USER_AGENT = (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "Chrome/120.0.0.0 Safari/537.36"
-    )
+    USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) " "Chrome/120.0.0.0 Safari/537.36")
 
     def render(
         self,
