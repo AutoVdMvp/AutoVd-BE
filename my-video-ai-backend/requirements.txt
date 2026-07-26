@@ -13,14 +13,17 @@ alembic>=1.13.1
 celery>=5.4.0
 redis>=5.0.4
 
-# --- Video Processing & AI ---
+# --- Video Processing ---
 ffmpeg-python==0.2.0
 moviepy==1.0.3
-google-genai>=1.0.0
-edge-tts>=6.1.9
 httpx>=0.27.0
 mutagen>=1.47.0
 beautifulsoup4>=4.12.3
+
+# --- AI Libraries ---
+edge-tts>=6.1.9
+google-genai>=1.0.0
+openai>=2.35.1,<3.0.0
 
 # --- Authentication ---
 google-auth>=2.29.0
